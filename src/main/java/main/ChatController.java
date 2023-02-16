@@ -1,11 +1,14 @@
 package main;
 
+import main.dto.DtoMessage;
+import main.dto.MessageMapper;
 import main.model.Message;
 import main.model.MessageRepository;
 import main.model.User;
 import main.model.UserRepository;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -13,10 +16,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.RequestContextHolder;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 public class ChatController {
@@ -24,6 +25,7 @@ public class ChatController {
     private UserRepository userRepository;
     @Autowired
     private MessageRepository messageRepository;
+    private MessageMapper messageMapper;
 
     @GetMapping("/init")
     public HashMap<String, Boolean> init(){
@@ -60,7 +62,7 @@ public class ChatController {
         Message msg = new Message();
         msg.setDateTime(LocalDateTime.now());
         msg.setMessage(message);
-        msg.setId(user.getId());
+        msg.setUser(user);
         messageRepository.saveAndFlush(msg);
 
         return Map.of("result", true);
@@ -68,8 +70,13 @@ public class ChatController {
     }
 
     @GetMapping("/message")
-    public List<String> getMessagesList(){
-        return null;
+    public List<DtoMessage> getMessagesList(){
+
+
+        return messageRepository.findAll(Sort.by(Sort.Direction.ASC, "dateTime"))
+                .stream()
+                .map(message -> MessageMapper.map(message))
+                .collect(Collectors.toList());
     }
     @GetMapping("/user")
     public HashMap<Integer, String> getUsersList(){
